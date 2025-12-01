@@ -1,5 +1,9 @@
 {
+  "app": "python main.py",
   "language": "python",
-  "app": "python3 main.py",
-  "projectId": "ts-eras-quiz"
+  "terraformProviders": [
+    "hashicorp/google@~> 5.0"
+  ],
+  "terraformModules": [],
+  "codeMakerOutput": "imports"
 }
