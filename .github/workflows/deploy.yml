@@ -47,9 +47,9 @@ jobs:
       - name: Ensure Remote State Bucket Exists
         run: |
           STATE_BUCKET=ts-eras-quiz-tfstate
-          if ! gsutil ls -b gs://$STATE_BUCKET 2>/dev/null; then
+          if ! gcloud storage buckets describe $STATE_BUCKET >/dev/null 2>&1; then
             echo "Creating remote state bucket..."
-            gsutil mb -l EU gs://$STATE_BUCKET
+            gcloud storage buckets create $STATE_BUCKET --location=EU
           else
             echo "Remote state bucket already exists."
           fi
