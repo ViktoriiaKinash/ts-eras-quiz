@@ -14,16 +14,6 @@ class InfraStack(TerraformStack):
             region="europe-central2",
         )
 
-        self.add_backend(
-            TerraformBackend(
-                type="gcs",
-                config={
-                    "bucket": "ts-eras-quiz-tfstate",
-                    "prefix": "cdktf/infra-stack"
-                }
-            )
-        )
-
         StorageBucket(
             self,
             "test-bucket",

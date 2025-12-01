@@ -1,9 +1,12 @@
 {
   "app": "python main.py",
   "language": "python",
-  "terraformProviders": [
-    "hashicorp/google@~> 5.0"
-  ],
+  "terraformProviders": ["cdktf/provider-google"],
   "terraformModules": [],
-  "codeMakerOutput": "imports"
+  "terraformBackend": {
+    "gcs": {
+      "bucket": "ts-eras-quiz-tfstate",
+      "prefix": "cdktf/infra-stack"
+    }
+  }
 }
