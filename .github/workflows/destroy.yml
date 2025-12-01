@@ -33,7 +33,7 @@ jobs:
       - name: Install Terraform CLI
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.6
+          terraform_version: latest
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
