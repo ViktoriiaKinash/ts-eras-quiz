@@ -1,7 +1,7 @@
 {
   "app": "python main.py",
   "language": "python",
-  "terraformProviders": ["cdktf/provider-google"],
+  "terraformProviders": ["hashicorp/google"],
   "terraformModules": [],
   "terraformBackend": {
     "gcs": {

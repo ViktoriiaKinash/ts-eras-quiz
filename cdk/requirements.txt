@@ -1,4 +1,3 @@
 cdktf
 constructs
-google-cloud-storage
 cdktf-cdktf-provider-google
