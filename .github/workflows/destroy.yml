@@ -1,0 +1,41 @@
+name: CDKTF Destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node & Python
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install CDKTF CLI & Python dependencies
+        run: |
+          npm install -g cdktf-cli
+          python3 -m pip install --upgrade pip
+          pip install -r cdk/requirements.txt
+
+      - name: Authenticate to GCP via WIF
+        run: |
+          gcloud auth login || echo "skip"
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud config set account ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Destroy Infrastructure
+        run: |
+          cd cdk
+          cdktf get
+          cdktf destroy --auto-approve
