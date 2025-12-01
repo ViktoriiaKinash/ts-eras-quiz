@@ -1,4 +1,4 @@
 cdktf
-constructs>=10.0.0
+constructs
 google-cloud-storage
 cdktf-cdktf-provider-google

@@ -1,5 +1,5 @@
-from cdktf import Construct, TerraformStack, TerraformBackend
-from cdktf import TerraformStack
+from constructs import Construct
+from cdktf import TerraformStack, TerraformBackend
 from cdktf_cdktf_provider_google.provider import GoogleProvider
 from cdktf_cdktf_provider_google.storage_bucket import StorageBucket
 

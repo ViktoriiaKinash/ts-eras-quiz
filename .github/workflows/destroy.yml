@@ -49,3 +49,8 @@ jobs:
           cd cdk
           cdktf get
           cdktf destroy --auto-approve
+
+      - name: Delete Remote State Bucket
+        run: |
+          STATE_BUCKET=ts-eras-quiz-tfstate
+          gcloud storage buckets delete gs://$STATE_BUCKET --quiet
