@@ -1,0 +1,60 @@
+@startuml
+!define C4P https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master
+!includeurl C4P/C4_Context.puml
+!includeurl C4P/C4_Container.puml
+!includeurl C4P/C4_Deployment.puml
+
+' Title
+LAYOUT_LEFT_RIGHT()
+title C4 — Level 2: TS Eras Quiz
+
+Person(user, "User", "Customer using browser to take quiz")
+
+System_Boundary(gcp, "Google Cloud Platform") {
+
+  Container(spa, "Single-Page Application", "React", "Provides all the quiz functionality via their web browser from GCS; calls backend REST /api/quiz via HTTPS")
+  Container(cdn, "Cloud Storage", "GCS", "Hosts SPA assets, including index.html, JS, CSS")
+
+  Container(api, "Quiz API", "Flask on Cloud Run", "Serves /api/quiz, selects era, writes to Firestore, publishes to Pub/Sub, returns era metadata and GCS image URL. Produces structured logs.")
+  ContainerDb(firestore, "Firestore DB", "Google Cloud Firestore", "Stores quiz results: {era, timestamp, metadata}")
+  Container(gcs_images, "Era Images Bucket", "GCS Bucket", "Stores era images through publicly accessible URLs")
+
+  Container(pubsub, "Quiz Completions", "Pub/Sub Topic", "Receives messages produced by API on quiz completion and triggers Async Worker")
+
+  Container(worker, "Async Worker", "Cloud Function", "Sends email via SendGrid and pushes custom metrics to Cloud Monitoring")
+
+  Container(monitoring, "Cloud Monitoring and Logging", "Cloud Monitoring / Cloud Logging", "Receives structured logs, custom metrics about era assignments")
+
+  Container(secretmgr, "Secret Manager", "Secret Manager", "Holds SendGrid API key and other secrets")
+
+  Container(ci, "CI / CD", "Cloud Build / GitHub Actions + CDKTF", "Infrastructure-as-Code pipeline: builds and deploys and destroys infrastructure")
+
+  System_Ext(sendgrid, "SendGrid", "Email API", "Email provider, sends email about quiz results")
+
+}
+
+' Relationships (numbered flows)
+Rel(user, spa, "Uses")
+Rel(spa, api, "HTTPS REST: POST /api/quiz", "HTTPS")
+Rel(cdn, spa, "Serves static site to user", "HTTPS")
+
+Rel(api, firestore, "Write: quiz result (era, timestamp, metadata)", "HTTPS")
+Rel(api, gcs_images, "Hosts era image URL", "HTTPS")
+Rel(api, pubsub, "Publish: quiz completion event", "Pub/Sub API")
+
+Rel(pubsub, worker, "Delivers messages", "Pub/Sub API")
+Rel(worker, secretmgr, "Reads SendGrid API key", "Secret Manager API")
+Rel(worker, sendgrid, "Sends email", "HTTPS")
+Rel(worker, monitoring, "Pushes custom metric", "Cloud Monitoring API")
+
+Rel(api, monitoring, "Writes structured logs", "Cloud Logging API")
+Rel(worker, monitoring, "Writes custom metrics", "Cloud Monitoring API")
+
+Rel(ci, api, "Deploys Flask container to Cloud Run", "GCS API")
+Rel(ci, cdn, "Deploys frontend to GCS and sets cache rules", "GCS API")
+Rel(ci, pubsub, "Provisions Pub/Sub topic and subscriptions", "GCP APIs")
+Rel(ci, firestore, "Provisions Firestore database", "GCP APIs")
+Rel(ci, worker, "Deploys Cloud Function with Pub/Sub trigger and secrets reference", "GCP APIs")
+Rel(ci, monitoring, "Creates metric descriptor", "Cloud Monitoring API")
+Rel(ci, secretmgr, "Adds SendGrid API key secret", "Secret Manager API")
+@enduml
