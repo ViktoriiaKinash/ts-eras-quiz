@@ -1,6 +1,7 @@
 from constructs import Construct
 from cdktf import TerraformStack
 from cdktf_cdktf_provider_google.provider import GoogleProvider
+from cdktf_cdktf_provider_google.storage_bucket import StorageBucket
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -13,3 +14,10 @@ class InfraStack(TerraformStack):
             region="europe-central2",
         )
 
+        StorageBucket(
+            self,
+            "test-bucket",
+            name="ts-eras-quiz-test-bucket-unique",
+            location="EU",
+            force_destroy=True,
+        )
