@@ -44,12 +44,16 @@ jobs:
       - name: Set project
         run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Ensure Remote State Bucket Exists
+      - name: Set up remote state bucket
         run: |
           STATE_BUCKET=ts-eras-quiz-tfstate
-          if ! gcloud storage buckets describe gs://$STATE_BUCKET >/dev/null 2>&1; then
+          PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+          if ! gcloud storage buckets describe gs://$STATE_BUCKET --project=$PROJECT_ID >/dev/null 2>&1; then
             echo "Creating remote state bucket..."
-            gcloud storage buckets create gs://$STATE_BUCKET --location=EU
+            gcloud storage buckets create gs://$STATE_BUCKET \
+              --project=$PROJECT_ID \
+              --location=europe-central2 \
+              --storage-class=STANDARD
           else
             echo "Remote state bucket already exists."
           fi
