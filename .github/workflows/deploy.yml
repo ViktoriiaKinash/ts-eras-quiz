@@ -28,11 +28,14 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r cdk/requirements.txt
 
-      - name: Authenticate to GCP via WIF
-        run: |
-          gcloud auth login || echo "skip"
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          gcloud config set account ${{ secrets.GCP_SA_EMAIL }}
+      - name: Authenticate to GCP via Workload Identity Federation
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_POOL }}/providers/${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Set project
+        run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy Infrastructure
         run: |
