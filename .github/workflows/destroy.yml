@@ -28,6 +28,11 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r cdk/requirements.txt
 
+      - name: Install Terraform CLI
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.6
+
       - name: Authenticate to GCP via Workload Identity Federation
         uses: google-github-actions/auth@v1
         with:
