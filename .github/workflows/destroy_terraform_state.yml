@@ -1,4 +1,4 @@
-name: CDKTF Destroy
+name: CDKTF Destroy Terraform State
 
 on:
   workflow_dispatch:
