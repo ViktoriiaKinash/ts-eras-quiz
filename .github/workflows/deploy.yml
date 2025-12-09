@@ -52,8 +52,8 @@ jobs:
             echo "Creating remote state bucket..."
             gcloud storage buckets create gs://$STATE_BUCKET \
               --project=$PROJECT_ID \
-              --location=europe-central2 \
-              --storage-class=STANDARD
+              --location=EU \
+              --default-storage-class=STANDARD
           else
             echo "Remote state bucket already exists."
           fi
