@@ -53,4 +53,5 @@ jobs:
       - name: Delete Remote State Bucket
         run: |
           STATE_BUCKET=ts-eras-quiz-tfstate
-          gcloud storage buckets delete gs://$STATE_BUCKET --quiet
+          sleep 5
+          gcloud storage buckets delete gs://$STATE_BUCKET --quiet || true
