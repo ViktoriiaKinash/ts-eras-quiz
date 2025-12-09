@@ -1,0 +1,17 @@
+name: CDKTF Destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Delete Remote State Bucket
+        run: |
+          STATE_BUCKET=ts-eras-quiz-tfstate
+          gcloud storage buckets delete gs://$STATE_BUCKET --quiet || true
