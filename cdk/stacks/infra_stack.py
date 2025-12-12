@@ -7,12 +7,6 @@ class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
         super().__init__(scope, ns)
 
-        TerraformBackend.gcs(
-            self,
-            bucket="ts-eras-quiz-tfstate",
-            prefix="cdktf/infra-stack",
-        )
-
         GoogleProvider(
             self,
             "google",

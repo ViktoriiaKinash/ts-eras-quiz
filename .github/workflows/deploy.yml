@@ -62,4 +62,5 @@ jobs:
         run: |
           cd cdk
           cdktf get
+          cdktf synth
           cdktf deploy --auto-approve
