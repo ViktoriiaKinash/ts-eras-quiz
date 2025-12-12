@@ -1,12 +1,15 @@
 {
   "app": "python main.py",
   "language": "python",
-  "terraformProviders": ["hashicorp/google"],
+  "terraformProviders": [
+    "hashicorp/google"
+  ],
   "terraformModules": [],
   "terraformBackend": {
     "gcs": {
       "bucket": "ts-eras-quiz-tfstate",
       "prefix": "cdktf/infra-stack"
     }
-  }
+  },
+  "projectId": "bd8e391a-3179-4816-afa2-4be9f1fefb3b"
 }

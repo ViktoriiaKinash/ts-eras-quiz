@@ -22,6 +22,4 @@ class InfraStack(TerraformStack):
             force_destroy=True,
         )
 
-app = App()
-InfraStack(app, "infra")
-app.synth()
+
