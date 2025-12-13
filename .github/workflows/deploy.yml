@@ -64,3 +64,7 @@ jobs:
           cdktf get
           cdktf synth
           cdktf deploy --auto-approve
+
+      - name: Upload Era Images to GCS
+        run: |
+          gsutil -m rsync -r cdk/images gs://ts-eras-quiz-images
