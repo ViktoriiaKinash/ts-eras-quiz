@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy_infrastructure:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -68,7 +68,8 @@ jobs:
       - name: Upload Era Images to GCS
         run: |
           gcloud storage cp --recursive cdk/images/ gs://ts-eras-quiz-images
-  build-and-push:
+  deploy_backend:
+    needs: deploy_infrastructure
     runs-on: ubuntu-latest
     permissions:
       id-token: write

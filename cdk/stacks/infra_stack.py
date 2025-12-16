@@ -7,11 +7,12 @@ from cdktf_cdktf_provider_google.service_account import ServiceAccount
 from cdktf_cdktf_provider_google.project_iam_member import ProjectIamMember
 from cdktf_cdktf_provider_google.artifact_registry_repository import ArtifactRegistryRepository
 from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
-from cdktf_cdktf_provider_google.cloud_run_service_iam_member import CloudRunServiceIamMember
+from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
         super().__init__(scope, ns)
+        project_id = "ts-eras-quiz"
 
         GcsBackend(
             self,
@@ -22,7 +23,7 @@ class InfraStack(TerraformStack):
         GoogleProvider(
             self,
             "google",
-            project="ts-eras-quiz",
+            project=project_id,
             region="europe-central2",
         )
 
@@ -62,6 +63,7 @@ class InfraStack(TerraformStack):
         ProjectIamMember(
             self,
             "firestore-access",
+            project=project_id,
             role="roles/datastore.user",
             member=f"serviceAccount:{backend_sa.email}",
         )
@@ -69,6 +71,7 @@ class InfraStack(TerraformStack):
         ProjectIamMember(
             self,
             "storage-access",
+            project=project_id,
             role="roles/storage.objectAdmin",
             member=f"serviceAccount:{backend_sa.email}",
         )
@@ -90,7 +93,7 @@ class InfraStack(TerraformStack):
             },
         )
 
-        CloudRunServiceIamMember(
+        CloudRunV2ServiceIamMember(
             self,
             "public-invoker",
             service=backend_service.name,
