@@ -32,7 +32,7 @@ class InfraStack(TerraformStack):
             "firestore",
             name="(default)",
             location_id="eur3",
-            type="NATIVE",
+            type="FIRESTORE_NATIVE",
         )
 
         StorageBucket(
