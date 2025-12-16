@@ -68,3 +68,32 @@ jobs:
       - name: Upload Era Images to GCS
         run: |
           gcloud storage cp --recursive cdk/images/ gs://ts-eras-quiz-images
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GCP_WORKLOAD_IDENTITY_POOL }}/providers/${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker europe-central2-docker.pkg.dev
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:latest \
+            ./backend
+
+      - name: Push Docker image
+        run: |
+          docker push europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:latest

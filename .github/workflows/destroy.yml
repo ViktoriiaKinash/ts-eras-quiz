@@ -64,3 +64,26 @@ jobs:
           cdktf get
           cdktf synth
           cdktf destroy --auto-approve
+  destroy_terraform_state:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GCP_WORKLOAD_IDENTITY_POOL }}/providers/${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Set project
+        run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Delete Remote State Bucket
+        run: |
+          STATE_BUCKET=ts-eras-quiz-tfstate
+          gcloud storage buckets delete gs://$STATE_BUCKET --quiet || true
