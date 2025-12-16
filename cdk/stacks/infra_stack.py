@@ -119,6 +119,7 @@ class InfraStack(TerraformStack):
             name="backend",
             location=region,
             ingress="INGRESS_TRAFFIC_ALL",
+            deletion_protection=False,
             template={
                 "service_account": backend_sa.email,
                 "containers": [
