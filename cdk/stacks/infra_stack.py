@@ -5,6 +5,9 @@ from cdktf_cdktf_provider_google.storage_bucket import StorageBucket
 from cdktf_cdktf_provider_google.firestore_database import FirestoreDatabase
 from cdktf_cdktf_provider_google.service_account import ServiceAccount
 from cdktf_cdktf_provider_google.project_iam_member import ProjectIamMember
+from cdktf_cdktf_provider_google.artifact_registry_repository import ArtifactRegistryRepository
+from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
+from cdktf_cdktf_provider_google.cloud_run_service_iam_member import CloudRunServiceIamMember
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -23,14 +26,13 @@ class InfraStack(TerraformStack):
             region="europe-central2",
         )
 
-        # FirestoreDatabase(
-        #     self,
-        #     "firestore",
-        #     name="(default)",
-        #     location_id="europe-central2",
-        #     type="NATIVE",
-        #     project="ts-eras-quiz",
-        # )
+        FirestoreDatabase(
+            self,
+            "firestore",
+            name="(default)",
+            location_id="eur3",
+            type="NATIVE",
+        )
 
         StorageBucket(
             self,
@@ -41,24 +43,58 @@ class InfraStack(TerraformStack):
             force_destroy=True,
         )
 
-        # backend_sa = ServiceAccount(
-        #     self,
-        #     "backend-sa",
-        #     account_id="backend-sa",
-        #     display_name="Backend Service Account",
-        # )
+        ArtifactRegistryRepository(
+            self,
+            "backend-repo",
+            location="europe-central2",
+            repository_id="ts-eras-quiz-docker-repo",
+            format="DOCKER",
+            description="Docker images",
+        )
 
-        # ProjectIamMember(
-        #     self,
-        #     "firestore-access",
-        #     role="roles/datastore.user",
-        #     member=f"serviceAccount:{backend_sa.email}",
-        # )
+        backend_sa = ServiceAccount(
+            self,
+            "backend-sa",
+            account_id="backend-sa",
+            display_name="Backend Service Account",
+        )
 
-        # ProjectIamMember(
-        #     self,
-        #     "storage-access",
-        #     role="roles/storage.objectViewer",
-        #     member=f"serviceAccount:{backend_sa.email}",
-        # )
+        ProjectIamMember(
+            self,
+            "firestore-access",
+            role="roles/datastore.user",
+            member=f"serviceAccount:{backend_sa.email}",
+        )
 
+        ProjectIamMember(
+            self,
+            "storage-access",
+            role="roles/storage.objectAdmin",
+            member=f"serviceAccount:{backend_sa.email}",
+        )
+
+        backend_service = CloudRunV2Service(
+            self,
+            "backend-service",
+            name="backend",
+            location="europe-central2",
+            ingress="INGRESS_TRAFFIC_ALL",
+            template={
+                "service_account": backend_sa.email,
+                "containers": [
+                    {
+                        "image": "europe-central2-docker.pkg.dev/ts-eras-quiz/ts-eras-quiz-docker-repo/backend:latest",
+                        "ports": [{"container_port": 8080}],
+                    }
+                ],
+            },
+        )
+
+        CloudRunServiceIamMember(
+            self,
+            "public-invoker",
+            service=backend_service.name,
+            location=backend_service.location,
+            role="roles/run.invoker",
+            member="allUsers",
+        )
