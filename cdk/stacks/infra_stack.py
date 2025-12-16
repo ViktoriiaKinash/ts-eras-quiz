@@ -124,15 +124,14 @@ class InfraStack(TerraformStack):
                 "containers": [
                     {
                         "image": "europe-central2-docker.pkg.dev/ts-eras-quiz/ts-eras-quiz-docker-repo/backend:latest",
-                        "ports": [
-                            {
-                                "container_port": 8080
-                            }
-                        ],
+                        "ports": {
+                            "container_port": 8080
+                        },
                     }
                 ],
             },
         )
+
 
         # ---------------------------
         # Public access
