@@ -8,25 +8,47 @@ from cdktf_cdktf_provider_google.project_iam_member import ProjectIamMember
 from cdktf_cdktf_provider_google.artifact_registry_repository import ArtifactRegistryRepository
 from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
 from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
+from cdktf_cdktf_provider_google.project_service import ProjectService
+
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
         super().__init__(scope, ns)
-        project_id = "ts-eras-quiz"
 
+        project_id = "ts-eras-quiz"
+        region = "europe-central2"
+
+        # ---------------------------
+        # Terraform backend
+        # ---------------------------
         GcsBackend(
             self,
             bucket="ts-eras-quiz-tfstate",
             prefix="cdktf/infra-stack",
         )
 
+        # ---------------------------
+        # Provider
+        # ---------------------------
         GoogleProvider(
             self,
             "google",
             project=project_id,
-            region="europe-central2",
+            region=region,
         )
 
+        # ---------------------------
+        # REQUIRED APIS
+        # ---------------------------
+        ProjectService(self, "run-api", service="run.googleapis.com")
+        ProjectService(self, "firestore-api", service="firestore.googleapis.com")
+        ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com")
+        ProjectService(self, "iam-api", service="iam.googleapis.com")
+        ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com")
+
+        # ---------------------------
+        # Firestore
+        # ---------------------------
         FirestoreDatabase(
             self,
             "firestore",
@@ -35,6 +57,9 @@ class InfraStack(TerraformStack):
             type="FIRESTORE_NATIVE",
         )
 
+        # ---------------------------
+        # Storage
+        # ---------------------------
         StorageBucket(
             self,
             "images-bucket",
@@ -44,15 +69,21 @@ class InfraStack(TerraformStack):
             force_destroy=True,
         )
 
+        # ---------------------------
+        # Artifact Registry
+        # ---------------------------
         ArtifactRegistryRepository(
             self,
             "backend-repo",
-            location="europe-central2",
+            location=region,
             repository_id="ts-eras-quiz-docker-repo",
             format="DOCKER",
             description="Docker images",
         )
 
+        # ---------------------------
+        # Service Account
+        # ---------------------------
         backend_sa = ServiceAccount(
             self,
             "backend-sa",
@@ -60,6 +91,9 @@ class InfraStack(TerraformStack):
             display_name="Backend Service Account",
         )
 
+        # ---------------------------
+        # IAM permissions
+        # ---------------------------
         ProjectIamMember(
             self,
             "firestore-access",
@@ -76,25 +110,33 @@ class InfraStack(TerraformStack):
             member=f"serviceAccount:{backend_sa.email}",
         )
 
+        # ---------------------------
+        # Cloud Run
+        # ---------------------------
         backend_service = CloudRunV2Service(
             self,
             "backend-service",
             name="backend",
-            location="europe-central2",
+            location=region,
             ingress="INGRESS_TRAFFIC_ALL",
             template={
                 "service_account": backend_sa.email,
                 "containers": [
                     {
                         "image": "europe-central2-docker.pkg.dev/ts-eras-quiz/ts-eras-quiz-docker-repo/backend:latest",
-                        "ports": {
-                            "container_port": 8080
-                        },
+                        "ports": [
+                            {
+                                "container_port": 8080
+                            }
+                        ],
                     }
                 ],
             },
         )
 
+        # ---------------------------
+        # Public access
+        # ---------------------------
         CloudRunV2ServiceIamMember(
             self,
             "public-invoker",
