@@ -98,7 +98,7 @@ class InfraStack(TerraformStack):
         CloudRunV2ServiceIamMember(
             self,
             "public-invoker",
-            service=backend_service.name,
+            name=backend_service.name,
             location=backend_service.location,
             role="roles/run.invoker",
             member="allUsers",
