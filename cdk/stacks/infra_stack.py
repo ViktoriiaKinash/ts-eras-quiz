@@ -123,10 +123,7 @@ class InfraStack(TerraformStack):
                 "service_account": backend_sa.email,
                 "containers": [
                     {
-                        "image": "europe-central2-docker.pkg.dev/ts-eras-quiz/ts-eras-quiz-docker-repo/backend:latest",
-                        "ports": {
-                            "container_port": 8080
-                        },
+                        "image": "europe-central2-docker.pkg.dev/ts-eras-quiz/ts-eras-quiz-docker-repo/backend:latest"
                     }
                 ],
             },
