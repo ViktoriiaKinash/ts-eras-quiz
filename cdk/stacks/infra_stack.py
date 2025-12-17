@@ -55,7 +55,8 @@ class InfraStack(TerraformStack):
         cloudfunctions_api = ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com", disable_on_destroy=False)
         pubsub_api = ProjectService(self, "pubsub-api", service="pubsub.googleapis.com", disable_on_destroy=False)
         compute_api = ProjectService(self, "compute-api", service="compute.googleapis.com", disable_on_destroy=False)
-
+        cloudbuild_api = ProjectService(self, "cloudbuild-api", service="cloudbuild.googleapis.com", disable_on_destroy=False)
+        
         # ---------------------------
         # Firestore
         # ---------------------------
@@ -234,7 +235,7 @@ class InfraStack(TerraformStack):
                 "resource": quiz_topic.id,
             },
         )
-
+        quiz_processor.node.add_dependency(cloudbuild_api)
         quiz_processor.node.add_dependency(cloudfunctions_api)
         quiz_processor.node.add_dependency(quiz_topic)
         quiz_processor.node.add_dependency(quiz_function_zip)
