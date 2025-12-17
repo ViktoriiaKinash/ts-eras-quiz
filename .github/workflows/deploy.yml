@@ -2,9 +2,6 @@ name: CDKTF Infra
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "cdk/**"
 
 jobs:
   deploy_infrastructure:
