@@ -61,7 +61,9 @@ class InfraStack(TerraformStack):
             location_id="eur3",
             type="FIRESTORE_NATIVE",
             deletion_policy="DELETE",
-        ).node.add_dependency(firestore_api)
+        )
+
+        firestore_db.node.add_dependency(firestore_api)
 
         # ---------------------------
         # Storage
@@ -73,15 +75,19 @@ class InfraStack(TerraformStack):
             location="EU",
             uniform_bucket_level_access=True,
             force_destroy=True,
-        ).node.add_dependency(storage_api)
+        )
 
-        StorageBucketIamMember(
+        images_bucket.node.add_dependency(storage_api)
+
+        public_access = StorageBucketIamMember(
             self,
             "public-access",
             bucket=images_bucket.name,
             role="roles/storage.objectViewer",
             member="allUsers",
-        ).node.add_dependency(images_bucket)
+        )
+
+        public_access.node.add_dependency(images_bucket)
 
         # ---------------------------
         # Artifact Registry
@@ -93,7 +99,9 @@ class InfraStack(TerraformStack):
             repository_id="ts-eras-quiz-docker-repo",
             format="DOCKER",
             description="Docker images",
-        ).node.add_dependency(artifact_api)
+        )
+        
+        backend_repo.node.add_dependency(artifact_api)
 
         # ---------------------------
         # Service Account
@@ -103,26 +111,32 @@ class InfraStack(TerraformStack):
             "backend-sa",
             account_id="backend-sa",
             display_name="Backend Service Account",
-        ).node.add_dependency(iam_api)
+        )
+        
+        backend_sa.node.add_dependency(iam_api)
 
         # ---------------------------
         # IAM permissions
         # ---------------------------
-        ProjectIamMember(
+        firestore_access = ProjectIamMember(
             self,
             "firestore-access",
             project=project_id,
             role="roles/datastore.user",
             member=f"serviceAccount:{backend_sa.email}",
-        ).node.add_dependency(firestore_db)
+        )
+        
+        firestore_access.node.add_dependency(firestore_db)
 
-        ProjectIamMember(
+        storage_access = ProjectIamMember(
             self,
             "storage-access",
             project=project_id,
             role="roles/storage.objectAdmin",
             member=f"serviceAccount:{backend_sa.email}",
-        ).node.add_dependency(images_bucket)
+        )
+        
+        storage_access.node.add_dependency(images_bucket)
 
         # ---------------------------
         # Cloud Run
@@ -149,11 +163,13 @@ class InfraStack(TerraformStack):
         # ---------------------------
         # Public access
         # ---------------------------
-        CloudRunV2ServiceIamMember(
+        public_invoker = CloudRunV2ServiceIamMember(
             self,
             "public-invoker",
             name=backend_service.name,
             location=backend_service.location,
             role="roles/run.invoker",
             member="allUsers",
-        ).node.add_dependency(backend_service)
+        )
+        
+        public_invoker.node.add_dependency(backend_service)
