@@ -61,8 +61,7 @@ class InfraStack(TerraformStack):
             location_id="eur3",
             type="FIRESTORE_NATIVE",
             deletion_policy="DELETE",
-        )
-        firestore_db.node.add_dependency(firestore_api)
+        ).node.add_dependency(firestore_api)
 
         # ---------------------------
         # Storage
@@ -73,9 +72,8 @@ class InfraStack(TerraformStack):
             name="ts-eras-quiz-images",
             location="EU",
             uniform_bucket_level_access=True,
-            force_destroy=True,  # delete all objects on destroy
-        )
-        images_bucket.node.add_dependency(storage_api)
+            force_destroy=True,
+        ).node.add_dependency(storage_api)
 
         StorageBucketIamMember(
             self,
@@ -95,8 +93,7 @@ class InfraStack(TerraformStack):
             repository_id="ts-eras-quiz-docker-repo",
             format="DOCKER",
             description="Docker images",
-        )
-        backend_repo.node.add_dependency(artifact_api)
+        ).node.add_dependency(artifact_api)
 
         # ---------------------------
         # Service Account
@@ -106,8 +103,7 @@ class InfraStack(TerraformStack):
             "backend-sa",
             account_id="backend-sa",
             display_name="Backend Service Account",
-        )
-        backend_sa.node.add_dependency(iam_api)
+        ).node.add_dependency(iam_api)
 
         # ---------------------------
         # IAM permissions
