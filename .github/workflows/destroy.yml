@@ -64,7 +64,7 @@ jobs:
           cd cdk
           cdktf get
           cdktf synth
-          cdktf destroy --auto-approve
+          cdktf destroy --auto-approve --var="sendgrid_api_key=${{ secrets.SENDGRID_API_KEY }}"
         continue-on-error: true
 
   destroy_terraform_state:
