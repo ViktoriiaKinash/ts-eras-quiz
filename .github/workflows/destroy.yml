@@ -91,4 +91,12 @@ jobs:
       - name: Delete Remote State Bucket
         run: |
           STATE_BUCKET=ts-eras-quiz-tfstate
-          gcloud storage buckets delete gs://$STATE_BUCKET --quiet || true
+          # Remove all objects first
+          if gcloud storage buckets describe gs://$STATE_BUCKET >/dev/null 2>&1; then
+            echo "Deleting all objects in $STATE_BUCKET..."
+            gcloud storage rm -r gs://$STATE_BUCKET/** || true
+            echo "Deleting bucket $STATE_BUCKET..."
+            gcloud storage buckets delete gs://$STATE_BUCKET --quiet || true
+          else
+            echo "Bucket $STATE_BUCKET does not exist, skipping."
+          fi
