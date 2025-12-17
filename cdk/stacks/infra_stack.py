@@ -14,6 +14,7 @@ from cdktf_cdktf_provider_google.cloudfunctions_function import CloudfunctionsFu
 from cdktf_cdktf_provider_google.pubsub_topic import PubsubTopic
 from cdktf_cdktf_provider_google.project_iam_member import ProjectIamMember
 from cdktf import TerraformVariable
+from cdktf_cdktf_provider_google.storage_bucket_object import StorageBucketObject
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -179,6 +180,14 @@ class InfraStack(TerraformStack):
         # Pub/Sub Topic
         # ---------------------------
         
+        quiz_function_zip = StorageBucketObject(
+            self,
+            "quiz-function-zip",
+            name="functions/quiz_processor.zip",
+            bucket=images_bucket.name,
+            source="../functions/quiz_processor/quiz_processor.zip",
+        )
+
         sendgrid_api_key = TerraformVariable(
             self,
             "sendgrid_api_key",
@@ -200,8 +209,8 @@ class InfraStack(TerraformStack):
             runtime="python311",
             region=region,
             entry_point="quiz_event_handler",
-            source_archive_bucket="ts-eras-quiz-images",
-            source_archive_object="functions/quiz_processor.zip",
+            source_archive_bucket=images_bucket.name,
+            source_archive_object=quiz_function_zip.name,
             trigger_topic=quiz_topic.name,
             available_memory_mb=256,
             timeout=60,
@@ -210,6 +219,8 @@ class InfraStack(TerraformStack):
                 "SENDGRID_API_KEY": sendgrid_api_key.string_value,
             },
         )
+
+        quiz_processor.node.add_dependency(quiz_function_zip)
 
         ProjectIamMember(
             self,

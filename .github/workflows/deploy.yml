@@ -55,11 +55,10 @@ jobs:
               --default-storage-class=STANDARD
           fi
 
-      - name: Package & Upload Cloud Function
+      - name: Package Cloud Function
         run: |
           cd functions/quiz_processor
           zip -r quiz_processor.zip main.py requirements.txt
-          gcloud storage cp quiz_processor.zip gs://ts-eras-quiz-images/functions/quiz_processor.zip
 
       - name: Deploy Infrastructure
         run: |
