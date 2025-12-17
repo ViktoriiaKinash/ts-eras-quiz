@@ -59,13 +59,18 @@ jobs:
           fi
 
       - name: Destroy Infrastructure
+        id: destroy
         run: |
           cd cdk
           cdktf get
           cdktf synth
           cdktf destroy --auto-approve
+        continue-on-error: true
+
   destroy_terraform_state:
     runs-on: ubuntu-latest
+    needs: destroy
+    if: ${{ success() }}
     permissions:
       id-token: write
       contents: read
