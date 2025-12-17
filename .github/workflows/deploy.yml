@@ -47,7 +47,7 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker europe-central2-docker.pkg.dev
 
-      - name: Build Docker image
+      - name: Build and Push Docker image
         run: |
           IMAGE_TAG=${{ github.sha }}
           docker build \
@@ -70,12 +70,13 @@ jobs:
           fi
 
       - name: Deploy Infrastructure
+        env:
+          TF_VAR_backend_image: europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:${{ github.sha }}
         run: |
           cd cdk
           cdktf get
           cdktf synth
-          cdktf deploy --auto-approve \
-            -var="backend_image=europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:${{ github.sha }}"
+          cdktf deploy --auto-approve
 
       - name: Upload Era Images to GCS
         run: |
