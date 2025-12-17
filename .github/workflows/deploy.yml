@@ -49,13 +49,11 @@ jobs:
 
       - name: Build Docker image
         run: |
+          IMAGE_TAG=${{ github.sha }}
           docker build \
-            -t europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:latest \
+            -t europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:$IMAGE_TAG \
             ./backend
-
-      - name: Push Docker image
-        run: |
-          docker push europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:latest
+          docker push europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:$IMAGE_TAG
 
       - name: Set up remote state bucket
         run: |
@@ -76,7 +74,8 @@ jobs:
           cd cdk
           cdktf get
           cdktf synth
-          cdktf deploy --auto-approve
+          cdktf deploy --auto-approve \
+            -var="backend_image=europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:${{ github.sha }}"
 
       - name: Upload Era Images to GCS
         run: |

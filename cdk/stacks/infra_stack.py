@@ -9,6 +9,7 @@ from cdktf_cdktf_provider_google.artifact_registry_repository import ArtifactReg
 from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
 from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
 from cdktf_cdktf_provider_google.project_service import ProjectService
+from cdktf import TerraformVariable
 
 
 class InfraStack(TerraformStack):
@@ -17,6 +18,13 @@ class InfraStack(TerraformStack):
 
         project_id = "ts-eras-quiz"
         region = "europe-central2"
+        backend_image = TerraformVariable(
+            self,
+            "backend_image",
+            type="string",
+            description="Docker image for Cloud Run backend",
+        )
+
 
         # ---------------------------
         # Terraform backend
@@ -124,7 +132,7 @@ class InfraStack(TerraformStack):
                 "service_account": backend_sa.email,
                 "containers": [
                     {
-                        "image": "europe-central2-docker.pkg.dev/ts-eras-quiz/ts-eras-quiz-docker-repo/backend:latest"
+                        "image": backend_image.string_value,
                     }
                 ],
             },
