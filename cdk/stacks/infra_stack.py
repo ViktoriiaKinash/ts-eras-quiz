@@ -1,3 +1,4 @@
+import os
 from constructs import Construct
 from cdktf import TerraformStack, GcsBackend
 from cdktf_cdktf_provider_google.provider import GoogleProvider
@@ -182,12 +183,15 @@ class InfraStack(TerraformStack):
         # Pub/Sub Topic
         # ---------------------------
         
+        cdk_dir = os.path.dirname(os.path.realpath(__file__))
+        zip_path = os.path.join(cdk_dir, "..", "quiz_processor.zip")
+
         quiz_function_zip = StorageBucketObject(
             self,
             "quiz-function-zip",
             name="quiz_processor.zip",
             bucket=images_bucket.name,
-            source="quiz_processor.zip",
+            source=zip_path,
         )
 
         quiz_function_zip.node.add_dependency(images_bucket)
