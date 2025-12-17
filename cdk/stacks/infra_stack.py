@@ -185,7 +185,7 @@ class InfraStack(TerraformStack):
         quiz_function_zip = StorageBucketObject(
             self,
             "quiz-function-zip",
-            name="functions/quiz_processor.zip",
+            name="quiz_processor.zip",
             bucket=images_bucket.name,
             source="quiz_processor.zip",
         )

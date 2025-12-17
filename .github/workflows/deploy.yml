@@ -57,7 +57,6 @@ jobs:
 
       - name: Package Cloud Function
         run: |
-          cp -r functions/quiz_processor ../cdk/
           cd functions/quiz_processor
           zip -r ../../cdk/quiz_processor.zip main.py requirements.txt
 
