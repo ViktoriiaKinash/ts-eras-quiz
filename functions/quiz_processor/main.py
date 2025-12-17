@@ -15,7 +15,7 @@ def quiz_event_handler(event, context):
     )
 
     era = payload["era"]
-    email = payload.get("user_email", "viktoriiakinash@student.agh.edu.pl")
+    email = payload.get("user_email", "	viktoriakinash@student.agh.edu.pl")
 
     # -----------------------
     # Send Email (SendGrid)
