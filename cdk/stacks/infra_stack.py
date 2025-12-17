@@ -9,8 +9,6 @@ from cdktf_cdktf_provider_google.artifact_registry_repository import ArtifactReg
 from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
 from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
 from cdktf_cdktf_provider_google.project_service import ProjectService
-from cdktf import TerraformVariable
-
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -41,33 +39,32 @@ class InfraStack(TerraformStack):
         # ---------------------------
         # REQUIRED APIS
         # ---------------------------
-        # ---------------------------
-
-        ProjectService(self, "run-api", service="run.googleapis.com")
-        ProjectService(self, "firestore-api", service="firestore.googleapis.com")
-        ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com")
-        ProjectService(self, "iam-api", service="iam.googleapis.com")
-        ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com")
-        ProjectService(self, "cloud-storage-api", service="storage.googleapis.com")
-        ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com")
-        ProjectService(self, "pubsub-api", service="pubsub.googleapis.com")
-        ProjectService(self, "compute-api", service="compute.googleapis.com")
+        run_api = ProjectService(self, "run-api", service="run.googleapis.com")
+        firestore_api = ProjectService(self, "firestore-api", service="firestore.googleapis.com")
+        artifact_api = ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com")
+        iam_api = ProjectService(self, "iam-api", service="iam.googleapis.com")
+        crm_api = ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com")
+        storage_api = ProjectService(self, "cloud-storage-api", service="storage.googleapis.com")
+        cloudfunctions_api = ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com")
+        pubsub_api = ProjectService(self, "pubsub-api", service="pubsub.googleapis.com")
+        compute_api = ProjectService(self, "compute-api", service="compute.googleapis.com")
 
         # ---------------------------
         # Firestore
         # ---------------------------
-        FirestoreDatabase(
+        firestore_db = FirestoreDatabase(
             self,
             "firestore",
             name="(default)",
             location_id="eur3",
             type="FIRESTORE_NATIVE",
         )
+        firestore_db.node.add_dependency(firestore_api)
 
         # ---------------------------
         # Storage
         # ---------------------------
-        StorageBucket(
+        images_bucket = StorageBucket(
             self,
             "images-bucket",
             name="ts-eras-quiz-images",
@@ -75,11 +72,12 @@ class InfraStack(TerraformStack):
             uniform_bucket_level_access=True,
             force_destroy=True,
         )
+        images_bucket.node.add_dependency(storage_api)
 
         # ---------------------------
         # Artifact Registry
         # ---------------------------
-        ArtifactRegistryRepository(
+        backend_repo = ArtifactRegistryRepository(
             self,
             "backend-repo",
             location=region,
@@ -87,6 +85,7 @@ class InfraStack(TerraformStack):
             format="DOCKER",
             description="Docker images",
         )
+        backend_repo.node.add_dependency(artifact_api)
 
         # ---------------------------
         # Service Account
@@ -97,6 +96,7 @@ class InfraStack(TerraformStack):
             account_id="backend-sa",
             display_name="Backend Service Account",
         )
+        backend_sa.node.add_dependency(iam_api)
 
         # ---------------------------
         # IAM permissions
@@ -107,7 +107,7 @@ class InfraStack(TerraformStack):
             project=project_id,
             role="roles/datastore.user",
             member=f"serviceAccount:{backend_sa.email}",
-        )
+        ).node.add_dependency(firestore_db)
 
         ProjectIamMember(
             self,
@@ -115,7 +115,7 @@ class InfraStack(TerraformStack):
             project=project_id,
             role="roles/storage.objectAdmin",
             member=f"serviceAccount:{backend_sa.email}",
-        )
+        ).node.add_dependency(images_bucket)
 
         # ---------------------------
         # Cloud Run
@@ -136,7 +136,8 @@ class InfraStack(TerraformStack):
                 ],
             },
         )
-
+        backend_service.node.add_dependency(run_api)
+        backend_service.node.add_dependency(backend_sa)
 
         # ---------------------------
         # Public access
@@ -148,4 +149,4 @@ class InfraStack(TerraformStack):
             location=backend_service.location,
             role="roles/run.invoker",
             member="allUsers",
-        )
+        ).node.add_dependency(backend_service)
