@@ -176,6 +176,8 @@ class InfraStack(TerraformStack):
             member="allUsers",
         )
 
+        public_invoker.node.add_dependency(backend_service)
+
         # ---------------------------
         # Pub/Sub Topic
         # ---------------------------
@@ -188,6 +190,8 @@ class InfraStack(TerraformStack):
             source="../functions/quiz_processor/quiz_processor.zip",
         )
 
+        quiz_function_zip.node.add_dependency(images_bucket)
+
         sendgrid_api_key = TerraformVariable(
             self,
             "sendgrid_api_key",
@@ -196,11 +200,15 @@ class InfraStack(TerraformStack):
             description="SendGrid API Key"
         )
 
+        sendgrid_api_key.node.add_dependency(quiz_function_zip)
+
         quiz_topic = PubsubTopic(
             self,
             "quiz-topic",
             name="quiz-topic"
         )
+
+        quiz_topic.node.add_dependency(pubsub_api)
 
         quiz_processor = CloudfunctionsFunction(
             self,
@@ -211,16 +219,29 @@ class InfraStack(TerraformStack):
             entry_point="quiz_event_handler",
             source_archive_bucket=images_bucket.name,
             source_archive_object=quiz_function_zip.name,
-            trigger_topic=quiz_topic.name,
             available_memory_mb=256,
             timeout=60,
             environment_variables={
                 "GCP_PROJECT_ID": project_id,
                 "SENDGRID_API_KEY": sendgrid_api_key.string_value,
             },
+            event_trigger={
+                "event_type": "google.pubsub.topic.publish",
+                "resource": quiz_topic.id,
+            },
         )
 
+        quiz_processor.node.add_dependency(cloudfunctions_api)
+        quiz_processor.node.add_dependency(quiz_topic)
         quiz_processor.node.add_dependency(quiz_function_zip)
+
+        ProjectIamMember(
+            self,
+            "quiz-func-pubsub-subscriber",
+            project=project_id,
+            role="roles/pubsub.subscriber",
+            member=f"serviceAccount:{quiz_processor.service_account_email}",
+        )
 
         ProjectIamMember(
             self,
@@ -230,12 +251,4 @@ class InfraStack(TerraformStack):
             member=f"serviceAccount:{quiz_processor.service_account_email}",
         )
 
-        ProjectIamMember(
-            self,
-            "quiz-func-pubsub-subscriber",
-            project=project_id,
-            role="roles/pubsub.subscriber",
-            member=f"serviceAccount:{quiz_processor.service_account_email}",
-        )
         
-        public_invoker.node.add_dependency(backend_service)
