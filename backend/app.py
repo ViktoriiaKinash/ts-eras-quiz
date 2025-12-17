@@ -1,7 +1,7 @@
 from enum import Enum
 import random
 from flask import Flask, jsonify
-from google.cloud import firestore, storage, pubsub_v1
+from google.cloud import firestore, storage
 import logging
 import os
 
@@ -26,9 +26,6 @@ db = firestore.Client()
 storage_client = storage.Client()
 bucket_name = "ts-eras-quiz-images"
 bucket = storage_client.bucket(bucket_name)
-
-pubsub_topic = "projects/ts-eras-quiz/topics/quiz-results"
-publisher = pubsub_v1.PublisherClient()
 
 # ---------------------------
 # Flask app
