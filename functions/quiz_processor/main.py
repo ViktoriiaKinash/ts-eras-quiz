@@ -1,10 +1,11 @@
+from datetime import datetime, timezone
+from google.protobuf.timestamp_pb2 import Timestamp
+from google.cloud import monitoring_v3
 import base64
 import json
 import os
-from google.cloud import monitoring_v3
 import sendgrid
 from sendgrid.helpers.mail import Mail
-from datetime import datetime
 
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
@@ -48,7 +49,7 @@ def quiz_event_handler(event, context):
     point = monitoring_v3.Point()
     point.value.int64_value = 1
     point.interval = monitoring_v3.TimeInterval()
-    point.interval.end_time.GetCurrentTime()
+    point.interval.end_time.FromDatetime(datetime.now(tz=timezone.utc))
 
     series.points.append(point)
 
