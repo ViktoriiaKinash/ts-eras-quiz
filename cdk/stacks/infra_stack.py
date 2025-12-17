@@ -41,11 +41,17 @@ class InfraStack(TerraformStack):
         # ---------------------------
         # REQUIRED APIS
         # ---------------------------
+        # ---------------------------
+
         ProjectService(self, "run-api", service="run.googleapis.com")
         ProjectService(self, "firestore-api", service="firestore.googleapis.com")
         ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com")
         ProjectService(self, "iam-api", service="iam.googleapis.com")
         ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com")
+        ProjectService(self, "cloud-storage-api", service="storage.googleapis.com")
+        ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com")
+        ProjectService(self, "pubsub-api", service="pubsub.googleapis.com")
+        ProjectService(self, "compute-api", service="compute.googleapis.com")
 
         # ---------------------------
         # Firestore

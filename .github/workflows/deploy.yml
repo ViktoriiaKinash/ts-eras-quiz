@@ -63,4 +63,4 @@ jobs:
 
       - name: Upload Era Images to GCS
         run: |
-          gcloud storage cp --recursive cdk/images/ gs://ts-eras-quiz-images
+          gcloud storage cp --recursive cdk/images/* gs://ts-eras-quiz-images
