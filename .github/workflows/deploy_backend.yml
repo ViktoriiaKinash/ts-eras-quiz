@@ -1,0 +1,46 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GCP_WORKLOAD_IDENTITY_POOL }}/providers/${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Set GCP Project
+        run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker europe-central2-docker.pkg.dev
+
+      - name: Build & Push Docker image
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          IMAGE_URI=europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:$IMAGE_TAG
+
+          docker build -t $IMAGE_URI ./backend
+          docker push $IMAGE_URI
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE_URI=europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:${{ github.sha }}
+
+          gcloud run services update backend \
+            --region=europe-central2 \
+            --image=$IMAGE_URI

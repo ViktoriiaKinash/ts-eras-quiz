@@ -1,10 +1,13 @@
-name: CDKTF Deploy
+name: CDKTF Infra
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "cdk/**"
 
 jobs:
-  deploy:
+  deploy_infrastructure:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -24,13 +27,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install CDKTF CLI & Python dependencies
+      - name: Install CDKTF
         run: |
           npm install -g cdktf-cli
           python3 -m pip install --upgrade pip
           pip install -r cdk/requirements.txt
 
-      - name: Install Terraform CLI
+      - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
@@ -44,38 +47,21 @@ jobs:
       - name: Set GCP Project
         run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker europe-central2-docker.pkg.dev
-
-      - name: Build and Push Docker image
-        run: |
-          IMAGE_TAG=${{ github.sha }}
-          docker build \
-            -t europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:$IMAGE_TAG \
-            ./backend
-          docker push europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:$IMAGE_TAG
-
-      - name: Set up remote state bucket
+      - name: Create Terraform state bucket (if needed)
         run: |
           STATE_BUCKET=ts-eras-quiz-tfstate
           PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
           if ! gcloud storage buckets describe gs://$STATE_BUCKET --project=$PROJECT_ID >/dev/null 2>&1; then
-            echo "Creating remote state bucket..."
             gcloud storage buckets create gs://$STATE_BUCKET \
               --project=$PROJECT_ID \
               --location=EU \
               --default-storage-class=STANDARD
-          else
-            echo "Remote state bucket already exists."
           fi
 
       - name: Deploy Infrastructure
-        env:
-          TF_VAR_backend_image: europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ts-eras-quiz-docker-repo/backend:${{ github.sha }}
         run: |
           cd cdk
           cdktf get
-          cdktf synth
           cdktf deploy --auto-approve
 
       - name: Upload Era Images to GCS
