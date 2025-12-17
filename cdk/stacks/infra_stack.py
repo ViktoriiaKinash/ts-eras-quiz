@@ -60,6 +60,7 @@ class InfraStack(TerraformStack):
             name="(default)",
             location_id="eur3",
             type="FIRESTORE_NATIVE",
+            deletion_policy="DELETE",
         )
         firestore_db.node.add_dependency(firestore_api)
 
@@ -72,17 +73,17 @@ class InfraStack(TerraformStack):
             name="ts-eras-quiz-images",
             location="EU",
             uniform_bucket_level_access=True,
-            force_destroy=True,
+            force_destroy=True,  # delete all objects on destroy
         )
+        images_bucket.node.add_dependency(storage_api)
 
         StorageBucketIamMember(
             self,
             "public-access",
-            bucket="ts-eras-quiz-images",
+            bucket=images_bucket.name,
             role="roles/storage.objectViewer",
             member="allUsers",
-        )
-        images_bucket.node.add_dependency(storage_api)
+        ).node.add_dependency(images_bucket)
 
         # ---------------------------
         # Artifact Registry
