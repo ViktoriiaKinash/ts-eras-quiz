@@ -57,8 +57,14 @@ jobs:
 
       - name: Package Cloud Function
         run: |
+          cp -r functions/quiz_processor ../cdk/
           cd functions/quiz_processor
-          zip -r quiz_processor.zip main.py requirements.txt
+          zip -r ../../cdk/quiz_processor.zip main.py requirements.txt
+
+      - name: Debug ZIP
+        run: |
+          cd cdk
+          ls -lah
 
       - name: Deploy Infrastructure
         run: |

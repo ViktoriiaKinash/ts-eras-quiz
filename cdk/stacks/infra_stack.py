@@ -187,7 +187,7 @@ class InfraStack(TerraformStack):
             "quiz-function-zip",
             name="functions/quiz_processor.zip",
             bucket=images_bucket.name,
-            source="../functions/quiz_processor/quiz_processor.zip",
+            source="quiz_processor.zip",
         )
 
         quiz_function_zip.node.add_dependency(images_bucket)
