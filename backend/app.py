@@ -30,7 +30,7 @@ bucket_name = "ts-eras-quiz-images"
 bucket = storage_client.bucket(bucket_name)
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(
-    os.environ["GCP_PROJECT_ID"], "quiz-topic"
+     "ts-eras-quiz", "quiz-topic"
 )
 
 # ---------------------------
