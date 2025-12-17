@@ -78,7 +78,7 @@ def quiz():
             json.dumps({
                 "era": selected_era,
                 "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-                "user_email": "student@example.com"
+                "user_email": "viktoriakinash@student.agh.edu.pl"
             }).encode("utf-8")
         )
 

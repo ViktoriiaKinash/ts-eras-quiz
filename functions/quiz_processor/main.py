@@ -23,12 +23,16 @@ def quiz_event_handler(event, context):
     if SENDGRID_API_KEY:
         sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
         message = Mail(
-            from_email="noreply@ts-eras-quiz.com",
+            from_email="viktoria.kinash12@gmail.com",
             to_emails=email,
             subject="Your Era Quiz Result",
             html_content=f"<strong>Your era is:</strong> {era}"
         )
-        sg.send(message)
+        try:
+            response = sg.send(message)
+            print("SendGrid status:", response.status_code)
+        except Exception as e:
+            print("SendGrid error:", str(e))
 
     # -----------------------
     # Custom Metric

@@ -56,7 +56,13 @@ class InfraStack(TerraformStack):
         pubsub_api = ProjectService(self, "pubsub-api", service="pubsub.googleapis.com", disable_on_destroy=False)
         compute_api = ProjectService(self, "compute-api", service="compute.googleapis.com", disable_on_destroy=False)
         cloudbuild_api = ProjectService(self, "cloudbuild-api", service="cloudbuild.googleapis.com", disable_on_destroy=False)
-        
+        iam_credentials_api = ProjectService(
+            self,
+            "iam-credentials-api",
+            service="iamcredentials.googleapis.com",
+            disable_on_destroy=False,
+        )
+
         # ---------------------------
         # Firestore
         # ---------------------------
