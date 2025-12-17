@@ -15,7 +15,7 @@ def quiz_event_handler(event, context):
     )
 
     era = payload["era"]
-    email = payload.get("user_email", "viktoriakinash@student.agh.edu.pl")
+    email = payload.get("user_email", "viktoria.kinash12@gmail.com")
 
     # -----------------------
     # Send Email (SendGrid)
@@ -23,7 +23,7 @@ def quiz_event_handler(event, context):
     if SENDGRID_API_KEY:
         sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
         message = Mail(
-            from_email="viktoria.kinash12@gmail.com",
+            from_email="viktoriakinash@student.agh.edu.pl",
             to_emails=email,
             subject="Your Era Quiz Result",
             html_content=f"<strong>Your era is:</strong> {era}"
@@ -47,6 +47,7 @@ def quiz_event_handler(event, context):
 
     point = monitoring_v3.Point()
     point.value.int64_value = 1
+    point.interval = monitoring_v3.TimeInterval()
     point.interval.end_time.GetCurrentTime()
 
     series.points.append(point)
