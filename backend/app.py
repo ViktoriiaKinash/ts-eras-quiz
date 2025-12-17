@@ -1,9 +1,11 @@
 from enum import Enum
 import random
 from flask import Flask, jsonify
-from google.cloud import firestore, storage
+from google.cloud import firestore, storage, pubsub_v1
 import logging
 import os
+import datetime
+import json
 
 class Era(Enum):
     _1989 = "1989"
@@ -26,6 +28,10 @@ db = firestore.Client()
 storage_client = storage.Client()
 bucket_name = "ts-eras-quiz-images"
 bucket = storage_client.bucket(bucket_name)
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path(
+    os.environ["GCP_PROJECT_ID"], "quiz-topic"
+)
 
 # ---------------------------
 # Flask app
@@ -62,6 +68,19 @@ def quiz():
             "image": selected_image,
         })
         logging.info(f"Stored quiz result with ID: {doc_ref[1].id}")
+
+        # ---------------------------
+        # Publish message to Pub/Sub
+        # ---------------------------
+
+        publisher.publish(
+            topic_path,
+            json.dumps({
+                "era": selected_era,
+                "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                "user_email": "student@example.com"
+            }).encode("utf-8")
+        )
 
         # ---------------------------
         # Return response

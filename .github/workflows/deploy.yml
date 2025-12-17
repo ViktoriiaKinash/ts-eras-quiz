@@ -55,11 +55,18 @@ jobs:
               --default-storage-class=STANDARD
           fi
 
+      - name: Package & Upload Cloud Function
+        run: |
+          cd functions/quiz_processor
+          zip -r quiz_processor.zip main.py requirements.txt
+          gcloud storage cp quiz_processor.zip gs://ts-eras-quiz-images/functions/quiz_processor.zip
+
       - name: Deploy Infrastructure
         run: |
           cd cdk
           cdktf get
-          cdktf deploy --auto-approve
+          cdktf deploy --auto-approve \
+            --var="sendgrid_api_key=${{ secrets.SENDGRID_API_KEY }}"
 
       - name: Upload Era Images to GCS
         run: |

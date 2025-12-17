@@ -10,7 +10,10 @@ from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
 from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
 from cdktf_cdktf_provider_google.project_service import ProjectService
 from cdktf_cdktf_provider_google.storage_bucket_iam_member import StorageBucketIamMember
-
+from cdktf_cdktf_provider_google.cloudfunctions_function import CloudfunctionsFunction
+from cdktf_cdktf_provider_google.pubsub_topic import PubsubTopic
+from cdktf_cdktf_provider_google.project_iam_member import ProjectIamMember
+from cdktf import TerraformVariable
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -170,6 +173,58 @@ class InfraStack(TerraformStack):
             location=backend_service.location,
             role="roles/run.invoker",
             member="allUsers",
+        )
+
+        # ---------------------------
+        # Pub/Sub Topic
+        # ---------------------------
+        
+        sendgrid_api_key = TerraformVariable(
+            self,
+            "sendgrid_api_key",
+            type="string",
+            sensitive=True,
+            description="SendGrid API Key"
+        )
+
+        quiz_topic = PubsubTopic(
+            self,
+            "quiz-topic",
+            name="quiz-topic"
+        )
+
+        quiz_processor = CloudfunctionsFunction(
+            self,
+            "quiz-processor-func",
+            name="quiz-processor",
+            runtime="python311",
+            region=region,
+            entry_point="quiz_event_handler",
+            source_archive_bucket="ts-eras-quiz-images",
+            source_archive_object="functions/quiz_processor.zip",
+            trigger_topic=quiz_topic.name,
+            available_memory_mb=256,
+            timeout=60,
+            environment_variables={
+                "GCP_PROJECT_ID": project_id,
+                "SENDGRID_API_KEY": sendgrid_api_key.string_value,
+            },
+        )
+
+        ProjectIamMember(
+            self,
+            "quiz-func-metric-writer",
+            project=project_id,
+            role="roles/monitoring.metricWriter",
+            member=f"serviceAccount:{quiz_processor.service_account_email}",
+        )
+
+        ProjectIamMember(
+            self,
+            "quiz-func-pubsub-subscriber",
+            project=project_id,
+            role="roles/pubsub.subscriber",
+            member=f"serviceAccount:{quiz_processor.service_account_email}",
         )
         
         public_invoker.node.add_dependency(backend_service)
