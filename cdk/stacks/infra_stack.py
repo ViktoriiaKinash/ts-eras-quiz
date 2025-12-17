@@ -9,6 +9,8 @@ from cdktf_cdktf_provider_google.artifact_registry_repository import ArtifactReg
 from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
 from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
 from cdktf_cdktf_provider_google.project_service import ProjectService
+from cdktf_cdktf_provider_google.storage_bucket_iam_member import StorageBucketIamMember
+
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -39,15 +41,15 @@ class InfraStack(TerraformStack):
         # ---------------------------
         # REQUIRED APIS
         # ---------------------------
-        run_api = ProjectService(self, "run-api", service="run.googleapis.com")
-        firestore_api = ProjectService(self, "firestore-api", service="firestore.googleapis.com")
-        artifact_api = ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com")
-        iam_api = ProjectService(self, "iam-api", service="iam.googleapis.com")
-        crm_api = ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com")
-        storage_api = ProjectService(self, "cloud-storage-api", service="storage.googleapis.com")
-        cloudfunctions_api = ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com")
-        pubsub_api = ProjectService(self, "pubsub-api", service="pubsub.googleapis.com")
-        compute_api = ProjectService(self, "compute-api", service="compute.googleapis.com")
+        run_api = ProjectService(self, "run-api", service="run.googleapis.com", disable_on_destroy=False)
+        firestore_api = ProjectService(self, "firestore-api", service="firestore.googleapis.com", disable_on_destroy=False)
+        artifact_api = ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com", disable_on_destroy=False)
+        iam_api = ProjectService(self, "iam-api", service="iam.googleapis.com", disable_on_destroy=False)
+        crm_api = ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com", disable_on_destroy=False)
+        storage_api = ProjectService(self, "cloud-storage-api", service="storage.googleapis.com", disable_on_destroy=False)
+        cloudfunctions_api = ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com", disable_on_destroy=False)
+        pubsub_api = ProjectService(self, "pubsub-api", service="pubsub.googleapis.com", disable_on_destroy=False)
+        compute_api = ProjectService(self, "compute-api", service="compute.googleapis.com", disable_on_destroy=False)
 
         # ---------------------------
         # Firestore
@@ -71,6 +73,14 @@ class InfraStack(TerraformStack):
             location="EU",
             uniform_bucket_level_access=True,
             force_destroy=True,
+        )
+
+        StorageBucketIamMember(
+            self,
+            "public-access",
+            bucket="ts-eras-quiz-images",
+            role="roles/storage.objectViewer",
+            member="allUsers",
         )
         images_bucket.node.add_dependency(storage_api)
 
