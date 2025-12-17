@@ -18,13 +18,6 @@ class InfraStack(TerraformStack):
 
         project_id = "ts-eras-quiz"
         region = "europe-central2"
-        backend_image = TerraformVariable(
-            self,
-            "backend_image",
-            type="string",
-            description="Docker image for Cloud Run backend",
-        )
-
 
         # ---------------------------
         # Terraform backend
@@ -132,7 +125,7 @@ class InfraStack(TerraformStack):
                 "service_account": backend_sa.email,
                 "containers": [
                     {
-                        "image": backend_image.string_value,
+                        "image": "gcr.io/google-samples/hello-app:1.0",
                     }
                 ],
             },
