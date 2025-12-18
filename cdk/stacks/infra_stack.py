@@ -270,7 +270,7 @@ class InfraStack(TerraformStack):
             self,
             "era-metric",
             type="custom.googleapis.com/ts/era_assignments",
-            metric_kind="DELTA",
+            metric_kind="CUMULATIVE",
             value_type="INT64",
             labels=[{"key": "era", "value_type": "STRING"}],
             description="Counts of quiz era assignments",
