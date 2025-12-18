@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.cloud import monitoring_v3
 import base64
@@ -52,15 +52,23 @@ def quiz_event_handler(event, context):
     end_time = Timestamp()
     end_time.FromDatetime(datetime.now(timezone.utc))
 
+    start_time = Timestamp()
+    start_time.FromDatetime(datetime.now(timezone.utc) - timedelta(seconds=1))  # 1 second before
+
     interval = monitoring_v3.TimeInterval()
+    interval.start_time = start_time
     interval.end_time = end_time
 
     point.interval = interval
     series.points.append(point)
 
-    client.create_time_series(
-        request={
-            "name": project_name,
-            "time_series": [series]
-        }
-    )
+    try:
+        client.create_time_series(
+            request={
+                "name": project_name,
+                "time_series": [series]
+            }
+        )
+        print(f"Metric sent: era={era}")
+    except Exception as e:
+        print("Cloud Monitoring error:", str(e))

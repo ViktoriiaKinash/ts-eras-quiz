@@ -1,6 +1,7 @@
 from enum import Enum
 import random
 from flask import Flask, jsonify
+from flask_cors import CORS
 from google.cloud import firestore, storage, pubsub_v1
 import logging
 import os
@@ -37,6 +38,7 @@ topic_path = publisher.topic_path(
 # Flask app
 # ---------------------------
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": ["*"]}})
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 @app.route("/api/quiz", methods=["GET"])
