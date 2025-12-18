@@ -167,7 +167,7 @@ class InfraStack(TerraformStack):
         # ---------------------------
         backend_service = CloudRunV2Service(
             self,
-            "backend",
+            "backend-service",
             name="backend",
             location=region,
             ingress="INGRESS_TRAFFIC_ALL",
