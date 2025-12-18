@@ -14,6 +14,7 @@ from cdktf_cdktf_provider_google.cloudfunctions2_function import Cloudfunctions2
 from cdktf_cdktf_provider_google.pubsub_topic import PubsubTopic
 from cdktf import TerraformStack, GcsBackend, TerraformVariable
 from cdktf_cdktf_provider_google.storage_bucket_object import StorageBucketObject
+from cdktf_cdktf_provider_google.monitoring_metric_descriptor import MonitoringMetricDescriptor
 
 class InfraStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):
@@ -260,3 +261,18 @@ class InfraStack(TerraformStack):
                 "retry_policy": "RETRY_POLICY_RETRY",
             },
         )
+
+        # ---------------------------
+        # Custom Metric Descriptor
+        # ---------------------------
+
+        MonitoringMetricDescriptor(
+            self,
+            "era-metric",
+            type="custom.googleapis.com/ts/era_assignments",
+            metric_kind="DELTA",
+            value_type="INT64",
+            labels=[{"key": "era", "value_type": "STRING"}],
+            description="Counts of quiz era assignments",
+        )
+
