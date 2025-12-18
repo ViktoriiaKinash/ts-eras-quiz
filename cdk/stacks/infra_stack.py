@@ -1,6 +1,5 @@
 import os
 from constructs import Construct
-from cdktf import TerraformStack, GcsBackend
 from cdktf_cdktf_provider_google.provider import GoogleProvider
 from cdktf_cdktf_provider_google.storage_bucket import StorageBucket
 from cdktf_cdktf_provider_google.firestore_database import FirestoreDatabase
@@ -11,10 +10,9 @@ from cdktf_cdktf_provider_google.cloud_run_v2_service import CloudRunV2Service
 from cdktf_cdktf_provider_google.cloud_run_v2_service_iam_member import CloudRunV2ServiceIamMember
 from cdktf_cdktf_provider_google.project_service import ProjectService
 from cdktf_cdktf_provider_google.storage_bucket_iam_member import StorageBucketIamMember
-from cdktf_cdktf_provider_google.cloudfunctions_function import CloudfunctionsFunction
+from cdktf_cdktf_provider_google.cloudfunctions2_function import Cloudfunctions2Function
 from cdktf_cdktf_provider_google.pubsub_topic import PubsubTopic
-from cdktf_cdktf_provider_google.project_iam_member import ProjectIamMember
-from cdktf import TerraformVariable
+from cdktf import TerraformStack, GcsBackend, TerraformVariable
 from cdktf_cdktf_provider_google.storage_bucket_object import StorageBucketObject
 
 class InfraStack(TerraformStack):
@@ -50,18 +48,11 @@ class InfraStack(TerraformStack):
         firestore_api = ProjectService(self, "firestore-api", service="firestore.googleapis.com", disable_on_destroy=False)
         artifact_api = ProjectService(self, "artifact-api", service="artifactregistry.googleapis.com", disable_on_destroy=False)
         iam_api = ProjectService(self, "iam-api", service="iam.googleapis.com", disable_on_destroy=False)
-        crm_api = ProjectService(self, "crm-api", service="cloudresourcemanager.googleapis.com", disable_on_destroy=False)
-        storage_api = ProjectService(self, "cloud-storage-api", service="storage.googleapis.com", disable_on_destroy=False)
-        cloudfunctions_api = ProjectService(self, "cloud-functions-api", service="cloudfunctions.googleapis.com", disable_on_destroy=False)
+        storage_api = ProjectService(self, "storage-api", service="storage.googleapis.com", disable_on_destroy=False)
         pubsub_api = ProjectService(self, "pubsub-api", service="pubsub.googleapis.com", disable_on_destroy=False)
-        compute_api = ProjectService(self, "compute-api", service="compute.googleapis.com", disable_on_destroy=False)
         cloudbuild_api = ProjectService(self, "cloudbuild-api", service="cloudbuild.googleapis.com", disable_on_destroy=False)
-        iam_credentials_api = ProjectService(
-            self,
-            "iam-credentials-api",
-            service="iamcredentials.googleapis.com",
-            disable_on_destroy=False,
-        )
+        cloudfunctions_api = ProjectService(self, "cloudfunctions-api", service="cloudfunctions.googleapis.com", disable_on_destroy=False)
+        eventarc_api = ProjectService(self, "eventarc-api", service="eventarc.googleapis.com", disable_on_destroy=False)
 
         # ---------------------------
         # Firestore
@@ -70,7 +61,7 @@ class InfraStack(TerraformStack):
             self,
             "firestore",
             name="(default)",
-            location_id="eur3",
+            location_id="eur2",
             type="FIRESTORE_NATIVE",
             deletion_policy="DELETE",
         )
@@ -124,38 +115,59 @@ class InfraStack(TerraformStack):
             account_id="backend-sa",
             display_name="Backend Service Account",
         )
-        
+
         backend_sa.node.add_dependency(iam_api)
+
+        quiz_func_sa = ServiceAccount(
+            self,
+            "quiz-func-sa",
+            account_id="quiz-function-sa",
+        )
 
         # ---------------------------
         # IAM permissions
         # ---------------------------
         firestore_access = ProjectIamMember(
             self,
-            "firestore-access",
+            "backend-firestore",
             project=project_id,
             role="roles/datastore.user",
             member=f"serviceAccount:{backend_sa.email}",
         )
-        
         firestore_access.node.add_dependency(firestore_db)
 
         storage_access = ProjectIamMember(
             self,
-            "storage-access",
+            "backend-storage",
             project=project_id,
             role="roles/storage.objectAdmin",
             member=f"serviceAccount:{backend_sa.email}",
         )
-        
+
         storage_access.node.add_dependency(images_bucket)
+
+        ProjectIamMember(
+            self,
+            "backend-pubsub-publisher",
+            project=project_id,
+            role="roles/pubsub.publisher",
+            member=f"serviceAccount:{backend_sa.email}",
+        )
+
+        ProjectIamMember(
+            self,
+            "quiz-metric-writer",
+            project=project_id,
+            role="roles/monitoring.metricWriter",
+            member=f"serviceAccount:{quiz_func_sa.email}",
+        )
 
         # ---------------------------
         # Cloud Run
         # ---------------------------
         backend_service = CloudRunV2Service(
             self,
-            "backend-service",
+            "backend",
             name="backend",
             location=region,
             ingress="INGRESS_TRAFFIC_ALL",
@@ -179,7 +191,7 @@ class InfraStack(TerraformStack):
             self,
             "public-invoker",
             name=backend_service.name,
-            location=backend_service.location,
+            location=region,
             role="roles/run.invoker",
             member="allUsers",
         )
@@ -187,79 +199,64 @@ class InfraStack(TerraformStack):
         public_invoker.node.add_dependency(backend_service)
 
         # ---------------------------
+        # Pub/Sub
+        # ---------------------------
+        quiz_topic = PubsubTopic(self, "quiz-topic", name="quiz-topic")
+        quiz_topic.node.add_dependency(pubsub_api)
+
+        # ---------------------------
         # Pub/Sub Topic
         # ---------------------------
-        
-        cdk_dir = os.path.dirname(os.path.realpath(__file__))
-        zip_path = os.path.join(cdk_dir, "..", "quiz_processor.zip")
+        zip_path = os.path.join(os.path.dirname(__file__), "..", "quiz_processor.zip")
 
-        quiz_function_zip = StorageBucketObject(
+        quiz_zip = StorageBucketObject(
             self,
-            "quiz-function-zip",
-            name="quiz_processor.zip",
+            "quiz-zip",
             bucket=images_bucket.name,
+            name="quiz_processor.zip",
             source=zip_path,
         )
 
-        quiz_function_zip.node.add_dependency(images_bucket)
-
+        # ---------------------------
+        # Variables
+        # ---------------------------
         sendgrid_api_key = TerraformVariable(
             self,
             "sendgrid_api_key",
             type="string",
             sensitive=True,
-            description="SendGrid API Key"
         )
 
-        sendgrid_api_key.node.add_dependency(quiz_function_zip)
-
-        quiz_topic = PubsubTopic(
+        # ---------------------------
+        # Cloud Functions
+        # ---------------------------
+        Cloudfunctions2Function(
             self,
-            "quiz-topic",
-            name="quiz-topic"
-        )
-
-        quiz_topic.node.add_dependency(pubsub_api)
-
-        quiz_processor = CloudfunctionsFunction(
-            self,
-            "quiz-processor-func",
+            "quiz-processor",
             name="quiz-processor",
-            runtime="python311",
-            region=region,
-            entry_point="quiz_event_handler",
-            source_archive_bucket=images_bucket.name,
-            source_archive_object=quiz_function_zip.name,
-            available_memory_mb=256,
-            timeout=60,
-            environment_variables={
-                "GCP_PROJECT_ID": project_id,
-                "SENDGRID_API_KEY": sendgrid_api_key.string_value,
+            location=region,
+            build_config={
+                "runtime": "python311",
+                "entry_point": "quiz_event_handler",
+                "source": {
+                    "storage_source": {
+                        "bucket": images_bucket.name,
+                        "object": quiz_zip.name,
+                    }
+                },
+            },
+            service_config={
+                "service_account_email": quiz_func_sa.email,
+                "available_memory": "256M",
+                "timeout_seconds": 60,
+                "environment_variables": {
+                    "GCP_PROJECT_ID": project_id,
+                    "SENDGRID_API_KEY": sendgrid_api_key.string_value,
+                },
             },
             event_trigger={
-                "event_type": "google.pubsub.topic.publish",
-                "resource": quiz_topic.id,
+                "event_type": "google.cloud.pubsub.topic.v1.messagePublished",
+                "pubsub_topic": quiz_topic.id,
+                "retry_policy": "RETRY_POLICY_RETRY",
             },
         )
-        quiz_processor.node.add_dependency(cloudbuild_api)
-        quiz_processor.node.add_dependency(cloudfunctions_api)
-        quiz_processor.node.add_dependency(quiz_topic)
-        quiz_processor.node.add_dependency(quiz_function_zip)
-
-        ProjectIamMember(
-            self,
-            "quiz-func-pubsub-subscriber",
-            project=project_id,
-            role="roles/pubsub.subscriber",
-            member=f"serviceAccount:{quiz_processor.service_account_email}",
-        )
-
-        ProjectIamMember(
-            self,
-            "quiz-func-metric-writer",
-            project=project_id,
-            role="roles/monitoring.metricWriter",
-            member=f"serviceAccount:{quiz_processor.service_account_email}",
-        )
-
-        

@@ -48,13 +48,19 @@ def quiz_event_handler(event, context):
 
     point = monitoring_v3.Point()
     point.value.int64_value = 1
-    point.interval = monitoring_v3.TimeInterval()
-    point.interval.end_time.FromDatetime(datetime.now(tz=timezone.utc))
 
+    end_time = Timestamp()
+    end_time.FromDatetime(datetime.now(timezone.utc))
+
+    interval = monitoring_v3.TimeInterval()
+    interval.end_time = end_time
+
+    point.interval = interval
     series.points.append(point)
 
     client.create_time_series(
-        request={"name": project_name, "time_series": [series]}
+        request={
+            "name": project_name,
+            "time_series": [series]
+        }
     )
-
-    print(f"Processed quiz event for era={era} at {datetime.utcnow()}")
