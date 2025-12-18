@@ -185,29 +185,54 @@ class InfraStack(TerraformStack):
         backend_service.node.add_dependency(run_api)
         backend_service.node.add_dependency(backend_sa)
 
+        frontend_service = CloudRunV2Service(
+            self,
+            "frontend-service",
+            name="frontend",
+            location=region,
+            ingress="INGRESS_TRAFFIC_ALL",
+            deletion_protection=False,
+            template={
+                "containers": [
+                    {
+                        "image": "gcr.io/google-samples/hello-app:1.0",
+                    }
+                ],
+            },
+        )
+
+        frontend_service.node.add_dependency(run_api)
+
         # ---------------------------
         # Public access
         # ---------------------------
-        public_invoker = CloudRunV2ServiceIamMember(
+        backend_public_invoker = CloudRunV2ServiceIamMember(
             self,
-            "public-invoker",
+            "backend-public-invoker",
             name=backend_service.name,
             location=region,
             role="roles/run.invoker",
             member="allUsers",
         )
 
-        public_invoker.node.add_dependency(backend_service)
+        backend_public_invoker.node.add_dependency(backend_service)
+
+        frontend_public_invoker = CloudRunV2ServiceIamMember(
+            self,
+            "frontend-public-invoker",
+            name=frontend_service.name,
+            location=region,
+            role="roles/run.invoker",
+            member="allUsers",
+        )
+
+        frontend_public_invoker.node.add_dependency(frontend_service)
 
         # ---------------------------
         # Pub/Sub
         # ---------------------------
         quiz_topic = PubsubTopic(self, "quiz-topic", name="quiz-topic")
         quiz_topic.node.add_dependency(pubsub_api)
-
-        # ---------------------------
-        # Pub/Sub Topic
-        # ---------------------------
         zip_path = os.path.join(os.path.dirname(__file__), "..", "quiz_processor.zip")
 
         quiz_zip = StorageBucketObject(
@@ -274,5 +299,8 @@ class InfraStack(TerraformStack):
             value_type="INT64",
             labels=[{"key": "era", "value_type": "STRING"}],
             description="Counts of quiz era assignments",
+            lifecycle={
+                "prevent_destroy": True
+            }
         )
 

@@ -1,6 +1,6 @@
 from enum import Enum
 import random
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import firestore, storage, pubsub_v1
 import logging
@@ -41,7 +41,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": ["*"]}})
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-@app.route("/api/quiz", methods=["GET"])
+@app.route("/api/quiz", methods=["POST"])
 def quiz():
     try:
         # ---------------------------
@@ -61,6 +61,17 @@ def quiz():
         selected_image = random.choice(images)
         image_url = f"https://storage.googleapis.com/{bucket_name}/{selected_image}"
         logging.info(f"Selected image: {selected_image}")
+        data = {}
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+        else:
+            try:
+                data = request.form.to_dict() or {}
+            except Exception:
+                data = {}
+
+        user_email = data.get("user_email") or request.args.get("user_email") or os.environ.get("DEFAULT_USER_EMAIL", "viktoria.kinash12@gmail.com")
+        logging.info(f"Using user_email: {user_email}")
 
         # ---------------------------
         # Store quiz result in Firestore
@@ -68,6 +79,8 @@ def quiz():
         doc_ref = db.collection("quiz_results").add({
             "era": selected_era,
             "image": selected_image,
+            "user_email": user_email,
+            "created_at": firestore.SERVER_TIMESTAMP,
         })
         logging.info(f"Stored quiz result with ID: {doc_ref[1].id}")
 
@@ -80,7 +93,7 @@ def quiz():
             json.dumps({
                 "era": selected_era,
                 "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-                "user_email": "viktoria.kinash12@gmail.com"
+                "user_email": user_email
             }).encode("utf-8")
         )
 

@@ -12,11 +12,15 @@ export default function QuizPage() {
     setError(null);
     setLoading(true);
     try {
-      const url = new URL(
-        "https://backend-75096019526.europe-central2.run.app/api/quiz"
-      );
-      //   if (email) url.searchParams.set("email", email);
-      const res = await fetch(url.toString());
+      const url =
+        "https://backend-75096019526.europe-central2.run.app/api/quiz";
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_email: email }),
+      });
+
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
       // Navigate to results and pass data in state
