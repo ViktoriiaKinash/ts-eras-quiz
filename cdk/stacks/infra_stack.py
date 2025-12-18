@@ -61,7 +61,7 @@ class InfraStack(TerraformStack):
             self,
             "firestore",
             name="(default)",
-            location_id="eur2",
+            location_id="eur3",
             type="FIRESTORE_NATIVE",
             deletion_policy="DELETE",
         )
